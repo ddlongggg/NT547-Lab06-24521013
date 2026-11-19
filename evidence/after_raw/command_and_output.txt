@@ -1,0 +1,34 @@
+COMMAND: slither AuditTarget.sol --config-file config/slither.raw.json --fail-none --json evidence/after_raw/slither.json
+SLITHER_VERSION:
+0.11.6
+
+SOLC_VERSION:
+solc, the solidity compiler commandline interface
+Version: 0.8.24+commit.e11b9ed9.Linux.g++
+
+
+Detector: events-access
+PiggyBank_1013.updateOwner(address) (AuditTarget.sol#63-67) should emit an event for: 
+	- owner = newOwner (AuditTarget.sol#66) 
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#missing-events-access-control
+
+Detector: low-level-calls
+Low level call in PiggyBank_1013.ownerWithdraw(uint256) (AuditTarget.sol#41-44):
+	- (ok,None) = address(owner).call{value: amount}() (AuditTarget.sol#42)
+Low level call in PiggyBank_1013.destroyPool() (AuditTarget.sol#46-49):
+	- (ok,None) = address(owner).call{value: address(this).balance}() (AuditTarget.sol#47)
+Low level call in PiggyBank_1013.redeemSafe() (AuditTarget.sol#55-61):
+	- (ok,None) = msg.sender.call{value: a}() (AuditTarget.sol#59)
+Low level call in PiggyBank_1013.payout(address,uint256) (AuditTarget.sol#69-74):
+	- (ok,None) = to.call{value: amount}() (AuditTarget.sol#72)
+Low level call in PiggyBank_1013.payTreasury() (AuditTarget.sol#81-85):
+	- (ok,None) = treasury.call{value: address(this).balance / 2}() (AuditTarget.sol#83)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#low-level-calls
+
+Detector: naming-convention
+Contract PiggyBank_1013 (AuditTarget.sol#10-91) is not in CapWords
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#conformance-to-solidity-naming-conventions
+AuditTarget.sol analyzed (2 contracts with 102 detectors), 7 result(s) found
+Multiple frameworks detected: solc, Solc-json. Using solc (highest priority). Use --compile-force-framework to override.
+'solc --version' running
+'solc AuditTarget.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/duclong2901/Lab06_SinhVien' running

@@ -1,0 +1,8 @@
+﻿index,check,impact,confidence,file,lines,description
+1,events-access,Low,Medium,AuditTarget.sol,"63,64,65,66,67; 66",PiggyBank_1013.updateOwner(address) (AuditTarget.sol#63-67) should emit an event for:  	- owner = newOwner (AuditTarget.sol#66)
+2,low-level-calls,Informational,High,AuditTarget.sol,"41,42,43,44; 42","Low level call in PiggyBank_1013.ownerWithdraw(uint256) (AuditTarget.sol#41-44): 	- (ok,None) = address(owner).call{value: amount}() (AuditTarget.sol#42)"
+3,low-level-calls,Informational,High,AuditTarget.sol,"81,82,83,84,85; 83","Low level call in PiggyBank_1013.payTreasury() (AuditTarget.sol#81-85): 	- (ok,None) = treasury.call{value: address(this).balance / 2}() (AuditTarget.sol#83)"
+4,low-level-calls,Informational,High,AuditTarget.sol,"46,47,48,49; 47","Low level call in PiggyBank_1013.destroyPool() (AuditTarget.sol#46-49): 	- (ok,None) = address(owner).call{value: address(this).balance}() (AuditTarget.sol#47)"
+5,low-level-calls,Informational,High,AuditTarget.sol,"55,56,57,58,59,60,61; 59","Low level call in PiggyBank_1013.redeemSafe() (AuditTarget.sol#55-61): 	- (ok,None) = msg.sender.call{value: a}() (AuditTarget.sol#59)"
+6,low-level-calls,Informational,High,AuditTarget.sol,"69,70,71,72,73,74; 72","Low level call in PiggyBank_1013.payout(address,uint256) (AuditTarget.sol#69-74): 	- (ok,None) = to.call{value: amount}() (AuditTarget.sol#72)"
+7,naming-convention,Informational,High,AuditTarget.sol,"10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91",Contract PiggyBank_1013 (AuditTarget.sol#10-91) is not in CapWords

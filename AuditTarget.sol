@@ -29,7 +29,8 @@ contract PiggyBank_1013 {
     }
 
     constructor() {
-        owner = msg.sender;
+    owner = msg.sender;
+    treasury = payable(msg.sender);
     }
 
     function save() external payable {
@@ -42,36 +43,49 @@ contract PiggyBank_1013 {
         require(ok, "withdraw failed");
     }
 
-    function destroyPool() external {
-        selfdestruct(payable(msg.sender));
+     function destroyPool() external onlyOwner {
+        (bool ok, ) = payable(owner).call{value: address(this).balance}("");
+        require(ok, "destroy failed");
     }
 
     function depositSafe() external payable oneAtATime {
         held[msg.sender] += msg.value;
     }
 
-    function redeemSafe() external oneAtATime {
+    function redeemSafe() external oneAtATime { 
         uint256 a = held[msg.sender];
+        require(a > 0, "empty");
+        held[msg.sender] = 0;
         (bool ok, ) = msg.sender.call{value: a}("");
         require(ok, "send failed");
-        held[msg.sender] = 0;
     }
 
-    function updateOwner(address newOwner) external {
-        require(tx.origin == owner, "not owner");
+   function updateOwner(address newOwner) external {
+        require(msg.sender == owner, "not owner");
         require(newOwner != address(0), "zero");
         owner = newOwner;
     }
 
-    function payout(address payable to, uint256 amount) external {
-        to.transfer(amount);
+    function payout(address payable to, uint256 amount) external onlyOwner {
+        require(to != address(0), "zero");
+        require(amount <= address(this).balance, "insufficient balance");
+        (bool ok, ) = to.call{value: amount}("");
+        require(ok, "payout failed");
+    }
+
+    function setTreasury(address payable newTreasury) external onlyOwner {
+        require(newTreasury != address(0), "zero");
+        treasury = newTreasury;
     }
 
     function payTreasury() external onlyOwner {
-        treasury.transfer(address(this).balance / 2);
+        require(treasury != address(0), "zero treasury");
+        (bool ok, ) = treasury.call{value: address(this).balance / 2}("");
+        require(ok, "treasury failed");
     }
 
     function weekdayIndex() external view returns (uint256) {
+        // slither-disable-next-line weak-prng
         return (block.timestamp / 1 days + 4) % 7;
     }
 }
