@@ -1,0 +1,59 @@
+COMMAND: slither AuditTarget.sol --config-file slither.config.json --fail-none --json evidence/before_configured/slither.json
+SLITHER_VERSION:
+0.11.6
+
+SOLC_VERSION:
+solc, the solidity compiler commandline interface
+Version: 0.8.24+commit.e11b9ed9.Linux.g++
+
+
+Detector: arbitrary-send-eth
+PiggyBank_1013.payout(address,uint256) (AuditTarget.sol#66-68) sends eth to arbitrary user
+	Dangerous calls:
+	- to.transfer(amount) (AuditTarget.sol#67)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#functions-that-send-ether-to-arbitrary-destinations
+
+Detector: weak-prng
+PiggyBank_1013.weekdayIndex() (AuditTarget.sol#74-76) uses a weak PRNG: "(block.timestamp / 86400 + 4) % 7 (AuditTarget.sol#75)" 
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#weak-PRNG
+
+Detector: reentrancy-eth
+Reentrancy in PiggyBank_1013.redeemSafe() (AuditTarget.sol#53-58):
+	External calls:
+	- (ok,None) = msg.sender.call{value: a}() (AuditTarget.sol#55)
+	State variables written after the call(s):
+	- held[msg.sender] = 0 (AuditTarget.sol#57)
+	PiggyBank_1013.held (AuditTarget.sol#14) can be used in cross function reentrancies:
+	- PiggyBank_1013.depositSafe() (AuditTarget.sol#49-51)
+	- PiggyBank_1013.held (AuditTarget.sol#14)
+	- PiggyBank_1013.redeemSafe() (AuditTarget.sol#53-58)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-1
+
+Detector: suicidal
+PiggyBank_1013.destroyPool() (AuditTarget.sol#45-47) allows anyone to destruct the contract
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#suicidal
+
+Detector: uninitialized-state
+PiggyBank_1013.treasury (AuditTarget.sol#15) is never initialized. It is used in:
+	- PiggyBank_1013.payTreasury() (AuditTarget.sol#70-72)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#uninitialized-state-variables
+
+Detector: tx-origin
+PiggyBank_1013.updateOwner(address) (AuditTarget.sol#60-64) uses tx.origin for authorization: require(bool,string)(tx.origin == owner,not owner) (AuditTarget.sol#61)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#dangerous-usage-of-txorigin
+
+Detector: constable-states
+PiggyBank_1013.treasury (AuditTarget.sol#15) should be constant 
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#state-variables-that-could-be-declared-constant
+AuditTarget.sol analyzed (2 contracts with 64 detectors), 7 result(s) found
+Multiple frameworks detected: solc, Solc-json. Using solc (highest priority). Use --compile-force-framework to override.
+'solc --version' running
+'solc AuditTarget.sol --combined-json abi,ast,bin,bin-runtime,srcmap,srcmap-runtime,userdoc,devdoc,hashes --allow-paths .,/home/duclong2901/Lab06_SinhVien' running
+Compilation warnings/errors on AuditTarget.sol:
+Warning: "selfdestruct" has been deprecated. Note that, starting from the Cancun hard fork, the underlying opcode no longer deletes the code and data associated with an account and only transfers its Ether to the beneficiary, unless executed in the same transaction in which the contract was created (see EIP-6780). Any use in newly deployed contracts is strongly discouraged even if the new behavior is taken into account. Future changes to the EVM might further reduce the functionality of the opcode.
+  --> AuditTarget.sol:46:9:
+   |
+46 |         selfdestruct(payable(msg.sender));
+   |         ^^^^^^^^^^^^
+
+

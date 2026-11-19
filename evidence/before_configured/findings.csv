@@ -1,0 +1,8 @@
+﻿index,check,impact,confidence,file,lines,description
+1,arbitrary-send-eth,High,Medium,AuditTarget.sol,"66,67,68; 67","PiggyBank_1013.payout(address,uint256) (AuditTarget.sol#66-68) sends eth to arbitrary user 	Dangerous calls: 	- to.transfer(amount) (AuditTarget.sol#67)"
+2,weak-prng,High,Medium,AuditTarget.sol,"74,75,76; 75","PiggyBank_1013.weekdayIndex() (AuditTarget.sol#74-76) uses a weak PRNG: ""(block.timestamp / 86400 + 4) % 7 (AuditTarget.sol#75)"""
+3,reentrancy-eth,High,Medium,AuditTarget.sol,"53,54,55,56,57,58; 55; 57","Reentrancy in PiggyBank_1013.redeemSafe() (AuditTarget.sol#53-58): 	External calls: 	- (ok,None) = msg.sender.call{value: a}() (AuditTarget.sol#55) 	State variables written after the call(s): 	- held[msg.sender] = 0 (AuditTarget.sol#57) 	PiggyBank_1013.held (AuditTarget.sol#14) can be used in cross function reentrancies: 	- PiggyBank_1013.depositSafe() (AuditTarget.sol#49-51) 	- PiggyBank_1013.held (AuditTarget.sol#14) 	- PiggyBank_1013.redeemSafe() (AuditTarget.sol#53-58)"
+4,suicidal,High,High,AuditTarget.sol,"45,46,47",PiggyBank_1013.destroyPool() (AuditTarget.sol#45-47) allows anyone to destruct the contract
+5,uninitialized-state,High,High,AuditTarget.sol,"15; 70,71,72",PiggyBank_1013.treasury (AuditTarget.sol#15) is never initialized. It is used in: 	- PiggyBank_1013.payTreasury() (AuditTarget.sol#70-72)
+6,tx-origin,Medium,Medium,AuditTarget.sol,"60,61,62,63,64; 61","PiggyBank_1013.updateOwner(address) (AuditTarget.sol#60-64) uses tx.origin for authorization: require(bool,string)(tx.origin == owner,not owner) (AuditTarget.sol#61)"
+7,constable-states,Optimization,High,AuditTarget.sol,15,PiggyBank_1013.treasury (AuditTarget.sol#15) should be constant
