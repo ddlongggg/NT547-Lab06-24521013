@@ -2,7 +2,7 @@
 
 **MSSV:** 24521013  | **Họ tên:** Tạ Đức Long | **Lớp:** NT547.R11.ANTT
 **Session code tự sinh:** SC-28C875 | **Tên contract:** PiggyBank_1013
-**Solidity / Slither:** 0.8.24 / ... | **Ngày hoàn thành:** ...
+**Solidity / Slither:** 0.8.24 / 0.11.6 | **Ngày hoàn thành:** 1:00AM - 21/11/2026
 **URL GitHub repository:** https://github.com/ddlongggg/NT547-Lab06-24521013
 
 ## 1. Static scan (2,0 điểm)
@@ -148,32 +148,32 @@ THÀNH:
 
 ## 3. Kiến trúc / Inheritance (1,5 điểm)
 
-- Lệnh printer đã chạy: ...
-- Ảnh `evidence/architecture/inheritance.png` (hoặc .dot, nếu Graphviz chưa có): ...
-- Access control nằm ở ...; logic số dư nằm ở ...; contract triển khai nằm ở ...
-- Giải thích 3–5 câu điểm audit cần bắt đầu: ...
+- Lệnh printer đã chạy: python tools/print_arch.py (thực thi slither contracts/ArchitectureDemo.sol --print human-summary và --print inheritance-graph, sau đó render qua dot -Tpng)
+- Ảnh `evidence/architecture/inheritance.png` (hoặc .dot, nếu Graphviz chưa có): Đã xuất thành công đồ thị kế thừa tại evidence/architecture/inheritance.png
+- Access control nằm ở contract cha trừu tượng AccessManaged (biến admin và modifier onlyAdmin()); logic số dư nằm ở contract cha BalanceLedger (biến mapping(address => uint256) internal balances, hàm balanceOf và _credit); contract triển khai nằm ở contract con StudentAsset (kế thừa cả hai contract cha trên)
+- Giải thích 3–5 câu điểm audit cần bắt đầu: Trong kiến trúc kế thừa của ArchitectureDemo.sol, các logic nhạy cảm về bảo mật (security-critical) nằm ở hai contract cha là AccessManaged (kiểm soát xác thực quyền quản trị qua onlyAdmin) và BalanceLedger (cập nhật trực tiếp trạng thái số dư nội bộ trong hàm _credit). Hàm đóng vai trò cổng vào từ bên ngoài (entrypoint) duy nhất thay đổi trạng thái là StudentAsset.mint(address to, uint256 amount) (cùng với hàm đọc BalanceLedger.balanceOf). Khi thực hiện kiểm toán (audit), kiểm toán viên nên bắt đầu từ entrypoint StudentAsset.mint() vì đây là bề mặt tấn công (attack surface) nơi dữ liệu không tin cậy từ người gọi bên ngoài đi vào hệ thống. Từ entrypoint này, quá trình audit sẽ lần ngược theo luồng thực thi lên các contract cha để kiểm tra tính chặt chẽ của điều kiện chặn quyền ở AccessManaged.onlyAdmin() và tính toàn vẹn của phép cộng số dư ở BalanceLedger._credit()
 
 ## 4. Red -> Green CI (2,5 điểm)
 
 | Phase | Commit (full/short SHA) | Run URL | Kết quả | Detector khiến RED / lý do GREEN |
 |---|---|---|---|---|
 | Baseline vulnerable | fd65d96756194df50ba9fb8f0a90b66433566ae2 | https://github.com/ddlongggg/NT547-Lab06-24521013/actions/runs/44554335978 | RED | CI kích hoạt fail-on: medium và chặn pipeline do Slither phát hiện các lỗi từ mức Medium trở lên trong baseline: tx-origin (Medium), suicidal (High), arbitrary-send-eth (High), uninitialized-state (High), reentrancy-eth (High), weak-prng (High) |
-| Patched | | | GREEN | |
+| Patched | 3ce5b42bc12200e5ff9af4be497d92c93841aa5e | https://github.com/ddlongggg/NT547-Lab06-24521013/actions/runs/44573637618 | GREEN | Toàn bộ 4 lỗi thật (TP) và reentrancy-eth đã được vá trong code; cảnh báo ngữ cảnh weak-prng ở hàm view đã được kiểm soát bằng slither-disable-next-line, không còn finding mức Medium/High nào |
 
-- So sánh local `--fail-none` (thu thập findings) với CI `fail-on: medium`: ...
-- `exclude_low/informational` thay đổi kết quả hiển thị ra sao: ...
+- So sánh local `--fail-none` (thu thập findings) với CI `fail-on: medium`: Script tools/scan.py chạy ở máy cục bộ sử dụng cờ --fail-none để Slither luôn trả về exit code 0 kể cả khi phát hiện lỗ hổng, giúp xuất đầy đủ dữ liệu JSON/CSV phục vụ phân loại (triage). Ngược lại, GitHub Actions cấu hình fail-on: medium đóng vai trò cổng kiểm soát chất lượng (quality gate), tự động đánh dấu thất bại (RED, exit code khác 0) ngay khi xuất hiện bất kỳ cảnh báo nào từ mức Medium trở lên
+- `exclude_low/informational` thay đổi kết quả hiển thị ra sao: Thiết lập "exclude_low": true, "exclude_informational": true và "detectors_to_exclude": "solc-version" trong slither.config.json giúp lọc bỏ toàn bộ các cảnh báo nhiễu mức thấp và gợi ý tối ưu/quy ước đặt tên (như missing-zero-check, low-level-calls, naming-convention), giữ bảng kết quả tập trung hoàn toàn vào các rủi ro nghiêm trọng (High và Medium) mà không làm ẩn đi lỗi bảo mật thực sự
 
 ## 5. Mutation RED -> GREEN (1,5 điểm)
 
 - Mutation một dòng: `require(msg.sender == owner, "not owner")` -> `require(tx.origin == owner, "not owner")` trong `modifier onlyOwner`.
-- Detector kỳ vọng: `tx-origin` (mức Medium); xác nhận của em từ CI: ...
+- Detector kỳ vọng: `tx-origin` (mức Medium); xác nhận của em từ CI: Khi thử nghiệm đặt require(tx.origin == owner) trong modifier onlyOwner() (commit d763ba5), Slither 0.11.6 không phát hiện do detector tx-origin chỉ kiểm tra functions_declared mà bỏ qua modifier. Do đó, em đã hoàn tác và thực hiện mutation 1 dòng tương tự trong hàm updateOwner() (require(msg.sender == owner) → require(tx.origin == owner)), kích hoạt thành công CI RED với detector tx-origin (Medium), sau đó dùng git revert để đưa nhánh main về trạng thái GREEN
 
 | Phase | Commit SHA | Run URL | Kết quả |
 |---|---|---|---|
-| Mutation | | | RED |
-| Revert mutation | | | GREEN |
+| Mutation | d763ba5 | https://github.com/ddlongggg/NT547-Lab06-24521013/actions/runs/44787189407 | RED |
+| Revert mutation | 84698eb | https://github.com/ddlongggg/NT547-Lab06-24521013/actions/runs/44787685516 | GREEN |
 
-- Giải thích sự thay đổi về nguồn định danh/authorization: ...
+- Giải thích sự thay đổi về nguồn định danh/authorization: Việc đổi điều kiện kiểm tra trong hàm updateOwner() từ msg.sender == owner sang tx.origin == owner đã làm thay đổi bản chất xác thực từ người gọi trực tiếp (immediate caller) sang tài khoản EOA khởi tạo giao dịch gốc ban đầu (transaction origin). Trong EVM, tx.origin giữ nguyên địa chỉ của người khởi tạo xuyên suốt toàn bộ chuỗi gọi hàm nội bộ giữa các smart contract. Do đó, nếu chủ sở hữu (owner) vô tình tương tác với một hợp đồng độc hại bên ngoài (ví dụ qua một giao dịch nhận thưởng giả mạo), hợp đồng trung gian đó có thể gọi tiếp tới PiggyBank_1013.updateOwner(attackerAddress) và vượt qua hoàn toàn bước kiểm tra quyền vì tx.origin vẫn là owner. Hậu quả là kẻ tấn công chiếm được quyền owner và rút toàn bộ ETH của hợp đồng thông qua các hàm onlyOwner (ownerWithdraw, destroyPool, payout, payTreasury). Lệnh git revert khôi phục lại msg.sender, buộc người gọi trực tiếp hàm phải chính là owner và loại bỏ lỗ hổng chiếm quyền qua hợp
 
 ## 6. Bằng chứng, tự kiểm
 
@@ -186,4 +186,4 @@ THÀNH:
 - [ ] Các finding được triage, không chép lại mô tả detector thay cho suy luận
 - [ ] Tuyệt đối không có seed phrase, private key, credentials
 
-**Nhận xét cuối cùng (5–7 câu):** ...
+**Nhận xét cuối cùng (5–7 câu):** Qua bài thực hành NT547 Lab 06, em đã nắm vững quy trình kết hợp phân tích tĩnh bằng Slither với cổng kiểm soát bảo mật tự động trên GitHub Actions CI/CD. Trên hợp đồng mục tiêu PiggyBank_1013, bước phân loại (triage) theo ngữ cảnh mã nguồn đóng vai trò then chốt để tách bạch các lỗ hổng thực sự nghiêm trọng (suicidal, tx-origin, arbitrary-send-eth, uninitialized-state) khỏi các cảnh báo an toàn theo thiết kế (reentrancy-eth đã được bảo vệ bởi oneAtATime và weak-prng tại hàm view). Việc tinh chỉnh slither.config.json giúp loại bỏ hiệu quả các cảnh báo nhiễu mức Low và Informational, giữ kết quả quét tập trung vào các rủi ro cốt lõi mà không che giấu lỗi bảo mật. Chu trình kiểm thử RED -> GREEN -> RED -> GREEN trên GitHub Actions với ngưỡng fail-on: medium đã chứng minh khả năng tự động chặn đứng mã nguồn không an toàn ngay từ giai đoạn tích hợp. Đồng thời, thử nghiệm mutation tx-origin cũng chỉ ra giới hạn của công cụ phân tích tĩnh (như việc Slither 0.11.6 bỏ qua kiểm tra bên trong modifier), qua đó khẳng định tự động hóa CI/CD cần luôn song hành cùng quá trình rà soát mã nguồn thủ công của kiểm toán viên. Sự kết hợp giữa cấu hình công cụ chuẩn xác, ghi nhận quyết định triage minh bạch và kiểm soát cổng tự động chính là nền tảng để đảm bảo an toàn bền vững cho smart contract trong thực tế.
